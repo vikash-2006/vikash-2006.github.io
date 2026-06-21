@@ -20,18 +20,29 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     /* ---------------------------------------------------------
-       1. LOADER
+       1. LOADER — guaranteed to hide, never blocks on external
+          resources (fonts/CDN) which can hang on file:// or
+          slow connections.
     --------------------------------------------------------- */
     const loader = document.getElementById("loader");
-    window.addEventListener("load", () => {
-        setTimeout(() => {
-            loader.classList.add("hidden");
-            document.body.style.overflow = "";
+    let heroPlayed = false;
+
+    function revealSite() {
+        if (loader.classList.contains("hidden")) return;
+        loader.classList.add("hidden");
+        if (!heroPlayed) {
+            heroPlayed = true;
             playHeroEntrance();
-        }, 700);
-    });
-    // Safety: never trap the user behind the loader
-    setTimeout(() => loader.classList.add("hidden"), 3500);
+        }
+    }
+
+    // Primary: hide shortly after DOM is ready (loader is just a
+    // branding moment, not a real asset-wait).
+    setTimeout(revealSite, 900);
+
+    // Absolute safety net — fires no matter what, even if something
+    // above throws or a resource hangs.
+    setTimeout(revealSite, 2500);
 
     /* ---------------------------------------------------------
        2. HERO ENTRANCE ANIMATION
@@ -51,18 +62,18 @@ document.addEventListener("DOMContentLoaded", () => {
         });
         animateCounters();
     }
-
     /* ---------------------------------------------------------
        3. TYPED ROLE ROTATOR
     --------------------------------------------------------- */
     const roles = ["Data Science Intern", "Python Developer", "Backend Engineer", "Data Analyst"];
     const typedEl = document.getElementById("typedRole");
-    let roleIdx = 0, charIdx = roles[0].length, deleting = false;
+    let roleIdx = 0, charIdx = 0, deleting = false;
 
     function typeLoop() {
         const word = roles[roleIdx];
         if (!deleting) {
             charIdx++;
+            typedEl.textContent = word.substring(0, charIdx);
             if (charIdx >= word.length) {
                 deleting = true;
                 setTimeout(typeLoop, 1800);
@@ -70,6 +81,7 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         } else {
             charIdx--;
+            typedEl.textContent = word.substring(0, charIdx);
             if (charIdx <= 0) {
                 deleting = false;
                 roleIdx = (roleIdx + 1) % roles.length;
@@ -77,7 +89,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 return;
             }
         }
-        typedEl.textContent = word.substring(0, charIdx);
         setTimeout(typeLoop, deleting ? 35 : 65);
     }
     setTimeout(typeLoop, 2600);
